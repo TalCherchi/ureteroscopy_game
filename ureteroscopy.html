@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>סימולטור ריסוק אבנים</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #1a202c;
+            font-family: 'Rubik', sans-serif;
+            color: white;
+            touch-action: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            background: #0f131a;
+            border-radius: 8px;
+        }
+
+        /* UI Overlays */
+        .ui-layer {
+            position: absolute;
+            pointer-events: none;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            box-sizing: border-box;
+            z-index: 10;
+        }
+
+        .header {
+            text-align: center;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 20px;
+            align-self: center;
+            backdrop-filter: blur(4px);
+            max-width: 90%;
+            border: 1px solid #4a5568;
+        }
+
+        h1 { margin: 0; font-size: 1.4rem; color: #63b3ed; margin-bottom: 5px; }
+        p { margin: 5px 0 0; font-size: 1rem; color: #e2e8f0; line-height: 1.4; }
+
+        /* Buttons */
+        .btn-action {
+            pointer-events: auto;
+            background: #3182ce;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-family: inherit;
+            font-weight: bold;
+        }
+        .btn-action:hover { background: #2c5282; }
+
+        /* Laser Button */
+        #laser-btn {
+            pointer-events: auto;
+            align-self: center;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #fc8181 0%, #c53030 100%);
+            border: 4px solid #fff;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 0 15px #c53030;
+            transition: transform 0.1s, opacity 0.3s;
+            opacity: 0; /* Hidden by default */
+            transform: scale(0);
+            margin-bottom: 20px;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #laser-btn.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        #laser-btn.active {
+            box-shadow: 0 0 25px #f56565, 0 0 50px #f56565 inset;
+            animation: pulse 1s infinite;
+        }
+
+        #laser-btn:active { transform: scale(0.95); }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* Modal / Instructions */
+        #modal {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: white;
+            color: #2d3748;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 400px;
+            width: 80%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+
+        .modal-content h2 { margin-top: 0; color: #2b6cb0; }
+        
+        .hidden { display: none !important; }
+
+        /* Labels for Anatomy */
+        .anatomy-label {
+            position: absolute;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9rem;
+            pointer-events: none;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px black;
+            transition: opacity 0.5s;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="labels-container"></div>
+
+    <div class="ui-layer">
+        <div class="header" id="game-instruction-box">
+            <h1 id="stage-title">שלב 1: הדגמה</h1>
+            <p id="stage-desc">הרופא מחדיר את הצינורית. הצינורית גמישה ולכן אין חשש מפגיעה בדפנות.</p>
+            <button id="next-stage-btn" class="btn-action hidden" onclick="nextStage()">התחל את הפעולה</button>
+        </div>
+        <div id="laser-btn">לייזר</div>
+    </div>
+
+    <!-- Intro/Success Modal -->
+    <div id="modal">
+        <div class="modal-content" id="start-screen">
+            <h2>ברוכים הבאים</h2>
+            <p>סימולטור זה ידגים לכם את הליך ריסוק האבנים.</p>
+            <p>ההליך בטוח, מדויק ומתבצע ללא חתכים.</p>
+            <button class="btn-action" onclick="startGame()">התחל הדגמה</button>
+        </div>
+        
+        <div class="modal-content hidden" id="success-screen">
+            <h2 style="color: #38a169;">הטיפול הסתיים בהצלחה!</h2>
+            <p>האבן רוסקה לחלוטין לאבק דק שייצא באופן טבעי.</p>
+            <button class="btn-action" onclick="resetGame()">התחל מחדש</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Configuration & State ---
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const laserBtn = document.getElementById('laser-btn');
+    const modal = document.getElementById('modal');
+    const startScreen = document.getElementById('start-screen');
+    const successScreen = document.getElementById('success-screen');
+    const labelsContainer = document.getElementById('labels-container');
+    const stageTitle = document.getElementById('stage-title');
+    const stageDesc = document.getElementById('stage-desc');
+    const nextStageBtn = document.getElementById('next-stage-btn');
+
+    // Game States: 'idle', 'demo', 'navigate', 'destroy', 'win'
+    let currentState = 'idle';
+    let isLaserActive = false;
+    
+    // Canvas dimensions
+    let width, height;
+    
+    // Entities
+    let anatomicalPath = []; 
+    let scopeChain = []; 
+    let stone = null;
+    let particles = [];
+    
+    // Camera / Zoom
+    let cameraZoom = 1;
+    let cameraOffset = { x: 0, y: 0 };
+    let targetZoom = 1;
+    let targetOffset = { x: 0, y: 0 };
+
+    // Interaction
+    const mouse = { x: 0, y: 0, isDown: false };
+    let scopeProgressIndex = 0; 
+    let demoProgress = 0; // For auto-play
+
+    // Constants
+    const KIDNEY_COLOR = '#FEB2B2';
+    const KIDNEY_STROKE = '#E53E3E';
+    const TRACT_COLOR = '#FED7D7';
+    const TRACT_STROKE = '#F56565';
+    const STONE_COLOR = '#D69E2E';
+    
+    // --- State Management ---
+
+    function setStage(stage) {
+        currentState = stage;
+        nextStageBtn.classList.add('hidden');
+        laserBtn.classList.remove('visible');
+
+        if (stage === 'demo') {
+            stageTitle.innerText = "שלב 1: הדגמת המסלול";
+            stageDesc.innerText = "צפו כיצד הצינורית הגמישה עוברת בבטחה במרכז דרכי השתן, הצינורית גמישה ולכן אין חשש מפגיעה בדפנות.";
+            scopeProgressIndex = 0;
+            demoProgress = 0;
+            targetZoom = 1;
+            targetOffset = {x: 0, y:0};
+        }
+        else if (stage === 'navigate') {
+            stageTitle.innerText = "שלב 2: תורכם";
+            stageDesc.innerText = "גררו את הצינורית במעלה המסלול עד שתגיעו לאבן בכליה.";
+            scopeProgressIndex = 0; // Reset position for user
+            targetZoom = 1;
+            targetOffset = {x: 0, y:0};
+            // Reset scope to start
+            initScope();
+        }
+        else if (stage === 'destroy') {
+            stageTitle.innerText = "שלב 3: ריסוק האבן";
+            stageDesc.innerText = "הגענו ליעד! לחצו על כפתור הלייזר כדי לפורר את האבן.";
+            laserBtn.classList.add('visible');
+            
+            // Zoom in to stone
+            targetZoom = 2.5;
+            // Calculate center based on stone position
+            const stoneX = stone.x;
+            const stoneY = stone.y;
+            // We want stone at center of screen (width/2, height/2)
+            // Offset = Center - (Stone * Zoom)
+            targetOffset = {
+                x: (width / 2) - (stoneX * 2.5),
+                y: (height / 2) - (stoneY * 2.5)
+            };
+        }
+    }
+
+    function nextStage() {
+        if (currentState === 'demo') {
+            setStage('navigate');
+        }
+    }
+
+    // --- Anatomy Generation ---
+    
+    function generateAnatomyPath(w, h) {
+        const points = [];
+        // Urethra
+        addLinePoints(points, w * 0.5, h * 1.1, w * 0.5, h * 0.75, 20);
+        // Bladder
+        addQuadCurvePoints(points, 
+            w * 0.5, h * 0.75, 
+            w * 0.5, h * 0.65, 
+            w * 0.55, h * 0.60, 
+            20
+        );
+        // Ureter (Curve adjusted for connecting to kidney bottom)
+        addBezierCurvePoints(points,
+            w * 0.55, h * 0.60, 
+            w * 0.70, h * 0.50, 
+            w * 0.70, h * 0.40, 
+            w * 0.70, h * 0.20, 
+            50
+        );
+        return points;
+    }
+
+    // Geometry Helpers
+    function addLinePoints(arr, x1, y1, x2, y2, steps) {
+        for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            arr.push({ x: x1 + (x2 - x1) * t, y: y1 + (y2 - y1) * t });
+        }
+    }
+    function addQuadCurvePoints(arr, x1, y1, cx, cy, x2, y2, steps) {
+        for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            const invT = 1 - t;
+            arr.push({
+                x: invT * invT * x1 + 2 * invT * t * cx + t * t * x2,
+                y: invT * invT * y1 + 2 * invT * t * cy + t * t * y2
+            });
+        }
+    }
+    function addBezierCurvePoints(arr, x1, y1, cp1x, cp1y, cp2x, cp2y, x2, y2, steps) {
+        for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            const invT = 1 - t;
+            const x = (invT ** 3) * x1 + 3 * (invT ** 2) * t * cp1x + 3 * invT * (t ** 2) * cp2x + (t ** 3) * x2;
+            const y = (invT ** 3) * y1 + 3 * (invT ** 2) * t * cp1y + 3 * invT * (t ** 2) * cp2y + (t ** 3) * y2;
+            arr.push({x, y});
+        }
+    }
+
+    // --- Drawing ---
+
+    function drawOrgans() {
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        // Kidney
+        const kX = anatomicalPath[anatomicalPath.length - 1].x;
+        const kY = anatomicalPath[anatomicalPath.length - 1].y;
+        
+        ctx.save();
+        ctx.translate(kX, kY);
+        ctx.rotate(-Math.PI / 2); 
+        ctx.beginPath();
+        ctx.moveTo(0, -50);
+        ctx.bezierCurveTo(60, -60, 60, 60, 0, 50);
+        ctx.bezierCurveTo(-30, 30, -30, -30, 0, -50);
+        ctx.fillStyle = KIDNEY_COLOR;
+        ctx.strokeStyle = KIDNEY_STROKE;
+        ctx.lineWidth = 8;
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+
+        // Bladder
+        const bStart = anatomicalPath.find((p, i) => i > 20);
+        if(bStart) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.ellipse(width * 0.5, height * 0.70, width * 0.15, height * 0.12, 0, 0, Math.PI * 2);
+            ctx.fillStyle = KIDNEY_COLOR;
+            ctx.strokeStyle = KIDNEY_STROKE;
+            ctx.lineWidth = 8;
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // Tract
+        ctx.beginPath();
+        ctx.moveTo(anatomicalPath[0].x, anatomicalPath[0].y);
+        for(let i=1; i<anatomicalPath.length; i++) {
+            ctx.lineTo(anatomicalPath[i].x, anatomicalPath[i].y);
+        }
+        ctx.strokeStyle = TRACT_STROKE;
+        ctx.lineWidth = 40;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(anatomicalPath[0].x, anatomicalPath[0].y);
+        for(let i=1; i<anatomicalPath.length; i++) {
+            ctx.lineTo(anatomicalPath[i].x, anatomicalPath[i].y);
+        }
+        ctx.strokeStyle = TRACT_COLOR;
+        ctx.lineWidth = 30;
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(anatomicalPath[0].x, anatomicalPath[0].y);
+        for(let i=1; i<anatomicalPath.length; i+=2) {
+            ctx.lineTo(anatomicalPath[i].x, anatomicalPath[i].y);
+        }
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+        ctx.lineWidth = 20;
+        ctx.stroke();
+    }
+
+    function updateLabels() {
+        labelsContainer.innerHTML = '';
+        if (currentState === 'destroy') return; // Hide labels in zoom mode
+
+        const labels = [
+            { text: "כליה", x: anatomicalPath[anatomicalPath.length-1].x - 60, y: anatomicalPath[anatomicalPath.length-1].y },
+            { text: "שופכן", x: width * 0.25, y: height * 0.45 },
+            { text: "שלפוחית", x: width * 0.65, y: height * 0.75 },
+            { text: "שופכה", x: width * 0.55, y: height * 0.90 }
+        ];
+
+        labels.forEach(l => {
+            const div = document.createElement('div');
+            div.className = 'anatomy-label';
+            div.innerText = l.text;
+            div.style.left = l.x + 'px';
+            div.style.top = l.y + 'px';
+            labelsContainer.appendChild(div);
+        });
+    }
+
+    // --- Entities ---
+
+    class Stone {
+        constructor() {
+            const loc = anatomicalPath[anatomicalPath.length - 5]; 
+            this.x = loc.x;
+            this.y = loc.y;
+            this.radius = 15;
+            this.health = 100;
+            this.vertices = [];
+            const sides = 8;
+            for (let i = 0; i < sides; i++) {
+                const angle = (Math.PI * 2 * i) / sides;
+                const r = this.radius * (0.7 + Math.random() * 0.6);
+                this.vertices.push({ x: Math.cos(angle) * r, y: Math.sin(angle) * r });
+            }
+        }
+
+        draw() {
+            if (this.health <= 0) return;
+
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            if (isLaserActive) ctx.translate(Math.random()*2 - 1, Math.random()*2 - 1);
+
+            ctx.beginPath();
+            ctx.moveTo(this.vertices[0].x, this.vertices[0].y);
+            for (let i = 1; i < this.vertices.length; i++) {
+                ctx.lineTo(this.vertices[i].x, this.vertices[i].y);
+            }
+            ctx.closePath();
+            
+            ctx.fillStyle = STONE_COLOR;
+            ctx.fill();
+            ctx.strokeStyle = '#744210';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Damage cracks
+            if (this.health < 70) {
+                ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(this.vertices[0].x, this.vertices[0].y); ctx.stroke();
+            }
+            if (this.health < 40) {
+                ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(this.vertices[3].x, this.vertices[3].y); ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        hit() {
+            this.health -= 1.5;
+            createParticles(this.x, this.y, STONE_COLOR);
+            if (this.health <= 0) endGame();
+        }
+    }
+
+    class Particle {
+        constructor(x, y, color) {
+            this.x = x;
+            this.y = y;
+            this.vx = (Math.random() - 0.5) * 8;
+            this.vy = (Math.random() - 0.5) * 8;
+            this.life = 1.0;
+            this.color = color;
+            this.size = Math.random() * 4 + 1;
+        }
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+            this.life -= 0.05;
+        }
+        draw() {
+            ctx.globalAlpha = this.life;
+            ctx.fillStyle = this.color;
+            ctx.fillRect(this.x, this.y, this.size, this.size);
+            ctx.globalAlpha = 1.0;
+        }
+    }
+
+    function createParticles(x, y, color) {
+        for(let i=0; i<3; i++) particles.push(new Particle(x, y, color));
+    }
+
+    // --- Scope Logic ---
+
+    function initScope() {
+        scopeChain = [];
+        const startX = anatomicalPath[0].x;
+        const startY = height + 100; 
+        const segments = 100; // Increased from 40 to 100 for a much longer cable
+        
+        for(let i=0; i<segments; i++) {
+            scopeChain.push({ x: startX, y: startY + (i * 8) });
+        }
+        scopeProgressIndex = 0;
+    }
+
+    function updateScope() {
+        // Logic branches based on stage
+        
+        if (currentState === 'demo') {
+            // Auto-move
+            if (scopeProgressIndex < anatomicalPath.length - 6) {
+                scopeProgressIndex += 0.2; // Reduced speed from 0.5 to 0.2
+            } else {
+                // Demo done, show next button
+                if(nextStageBtn.classList.contains('hidden')) {
+                    nextStageBtn.classList.remove('hidden');
+                    stageDesc.innerText = "ההדגמה הסתיימה. כעת תורכם לנסות.";
+                }
+            }
+        }
+        else if (currentState === 'navigate') {
+            // User control
+            if (mouse.isDown) {
+                let closestDist = Infinity;
+                let closestIdx = -1;
+                // Search around current position
+                let startSearch = Math.max(0, scopeProgressIndex - 20);
+                let endSearch = Math.min(anatomicalPath.length - 1, scopeProgressIndex + 20);
+                if (scopeProgressIndex < 5) { startSearch = 0; endSearch = 20; }
+
+                // Map mouse to canvas space considering zoom (though zoom is 1 here)
+                // In navigate mode zoom is 1, so mouse.x is correct relative to canvas
+                
+                for(let i = 0; i < anatomicalPath.length; i++) {
+                    const p = anatomicalPath[i];
+                    const d = Math.hypot(mouse.x - p.x, mouse.y - p.y);
+                    if (d < closestDist) { closestDist = d; closestIdx = i; }
+                }
+                
+                if (closestDist < 150) {
+                     // Slowing down user control speed from 1 to 0.3
+                     if (closestIdx > scopeProgressIndex) scopeProgressIndex += 0.3;
+                     if (closestIdx < scopeProgressIndex) scopeProgressIndex -= 0.3;
+                }
+            }
+
+            // Check if reached stone
+            if (scopeProgressIndex >= anatomicalPath.length - 8) {
+                setStage('destroy');
+            }
+        }
+        else if (currentState === 'destroy') {
+            // Scope locked at position, waiting for laser
+            // Just minor bobbing
+        }
+
+        // --- Kinematics ---
+        const headTarget = anatomicalPath[Math.floor(scopeProgressIndex)] || anatomicalPath[anatomicalPath.length-1];
+        
+        scopeChain[0].x = headTarget.x;
+        scopeChain[0].y = headTarget.y;
+
+        const segLength = 10;
+        for (let i = 1; i < scopeChain.length; i++) {
+            const prev = scopeChain[i - 1];
+            const curr = scopeChain[i];
+            const dx = curr.x - prev.x;
+            const dy = curr.y - prev.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist > segLength) {
+                const ratio = (dist - segLength) / dist;
+                curr.x -= dx * ratio;
+                curr.y -= dy * ratio;
+            }
+        }
+    }
+
+    function drawScope() {
+        ctx.beginPath();
+        ctx.moveTo(scopeChain[0].x, scopeChain[0].y);
+        for (let i = 1; i < scopeChain.length - 1; i++) {
+            const xc = (scopeChain[i].x + scopeChain[i + 1].x) / 2;
+            const yc = (scopeChain[i].y + scopeChain[i + 1].y) / 2;
+            ctx.quadraticCurveTo(scopeChain[i].x, scopeChain[i].y, xc, yc);
+        }
+        ctx.strokeStyle = '#2D3748';
+        ctx.lineWidth = 6;
+        ctx.stroke();
+        ctx.strokeStyle = '#718096';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        const tip = scopeChain[0];
+        const prev = scopeChain[1];
+        const angle = Math.atan2(tip.y - prev.y, tip.x - prev.x);
+
+        ctx.save();
+        ctx.translate(tip.x, tip.y);
+        ctx.rotate(angle);
+        
+        // Camera head
+        ctx.fillStyle = '#A0AEC0'; ctx.fillRect(-5, -6, 10, 12);
+        ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(0, 0, 3, 0, Math.PI*2); ctx.fill();
+
+        // Light
+        ctx.beginPath();
+        ctx.moveTo(0, 0); ctx.lineTo(100, -30); ctx.lineTo(100, 30); ctx.closePath();
+        const grad = ctx.createRadialGradient(0,0,10, 0,0,100);
+        grad.addColorStop(0, 'rgba(255,255,255,0.4)');
+        grad.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        if (isLaserActive) {
+            ctx.beginPath();
+            ctx.moveTo(0, 0); ctx.lineTo(200, 0); 
+            ctx.strokeStyle = '#F56565';
+            ctx.lineWidth = 4;
+            ctx.shadowBlur = 10; ctx.shadowColor = 'red';
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
+        ctx.restore();
+    }
+
+    // --- Core Loop ---
+
+    function loop() {
+        if (currentState === 'idle' || currentState === 'win') return;
+
+        ctx.clearRect(0, 0, width, height);
+
+        // Zoom Interpolation
+        cameraZoom += (targetZoom - cameraZoom) * 0.05;
+        cameraOffset.x += (targetOffset.x - cameraOffset.x) * 0.05;
+        cameraOffset.y += (targetOffset.y - cameraOffset.y) * 0.05;
+
+        ctx.save();
+        // Apply camera transform
+        ctx.translate(cameraOffset.x, cameraOffset.y);
+        ctx.scale(cameraZoom, cameraZoom);
+
+        updateScope();
+        if (isLaserActive && stone && currentState === 'destroy') {
+            stone.hit();
+        }
+        
+        particles.forEach((p, i) => {
+            p.update();
+            if(p.life <= 0) particles.splice(i, 1);
+        });
+
+        drawOrgans();
+        if (stone) stone.draw();
+        drawScope();
+        particles.forEach(p => p.draw());
+
+        ctx.restore(); // Undo camera for next frame
+
+        requestAnimationFrame(loop);
+    }
+
+    // --- Input ---
+
+    function handleResize() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        anatomicalPath = generateAnatomyPath(width, height);
+        updateLabels();
+        
+        if (currentState === 'idle') {
+             drawOrgans();
+        }
+    }
+
+    function onMove(e) {
+        e.preventDefault();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const rect = canvas.getBoundingClientRect();
+        
+        // We need to map screen coordinates to world coordinates if zoomed
+        // WorldX = (ScreenX - OffsetX) / Zoom
+        mouse.x = (clientX - rect.left - cameraOffset.x) / cameraZoom;
+        mouse.y = (clientY - rect.top - cameraOffset.y) / cameraZoom;
+    }
+
+    function onDown(e) { mouse.isDown = true; onMove(e); }
+    function onUp(e) { mouse.isDown = false; isLaserActive = false; }
+
+    window.addEventListener('resize', handleResize);
+    canvas.addEventListener('mousedown', onDown);
+    canvas.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    canvas.addEventListener('touchstart', onDown, {passive: false});
+    canvas.addEventListener('touchmove', onMove, {passive: false});
+    window.addEventListener('touchend', onUp);
+
+    laserBtn.addEventListener('mousedown', (e) => {
+        if (currentState === 'destroy') isLaserActive = true;
+        e.stopPropagation();
+    });
+    laserBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (currentState === 'destroy') isLaserActive = true;
+        e.stopPropagation();
+    });
+    laserBtn.addEventListener('mouseup', () => isLaserActive = false);
+    laserBtn.addEventListener('touchend', () => isLaserActive = false);
+
+    // --- Game Control ---
+
+    function startGame() {
+        handleResize();
+        modal.classList.add('hidden');
+        startScreen.classList.add('hidden');
+        successScreen.classList.add('hidden');
+        
+        initScope();
+        stone = new Stone();
+        particles = [];
+        
+        // Start Loop
+        setStage('demo');
+        requestAnimationFrame(loop);
+    }
+
+    function endGame() {
+        currentState = 'win';
+        laserBtn.classList.remove('active');
+        modal.classList.remove('hidden');
+        successScreen.classList.remove('hidden');
+    }
+    
+    function resetGame() {
+        startGame();
+    }
+
+    // Init
+    handleResize();
+
+</script>
+</body>
+</html>
