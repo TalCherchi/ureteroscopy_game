@@ -47,19 +47,38 @@
             z-index: 10;
         }
 
+        /* Header Styles */
         .header {
             text-align: center;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 15px;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 20px;
             border-radius: 20px;
             align-self: center;
             backdrop-filter: blur(4px);
             max-width: 90%;
             border: 1px solid #4a5568;
+            transition: all 0.5s ease;
+            position: relative;
         }
 
-        h1 { margin: 0; font-size: 1.4rem; color: #63b3ed; margin-bottom: 5px; }
-        p { margin: 5px 0 0; font-size: 1rem; color: #e2e8f0; line-height: 1.4; }
+        .header.top-left {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: auto;
+            align-self: flex-start;
+            text-align: right;
+            max-width: 300px;
+            transform: none;
+            margin: 0;
+        }
+
+        h1 { margin: 0; font-size: 1.3rem; color: #63b3ed; margin-bottom: 8px; }
+        p { margin: 5px 0 0; font-size: 1rem; color: #e2e8f0; line-height: 1.5; }
+        .subtext { font-size: 0.85rem; color: #a0aec0; margin-top: 10px; display: block; }
+        
+        ul { text-align: right; padding-right: 20px; margin: 10px 0; font-size: 0.95rem; color: #cbd5e0; }
+        li { margin-bottom: 5px; }
 
         /* Buttons */
         .btn-action {
@@ -67,15 +86,26 @@
             background: #3182ce;
             color: white;
             border: none;
-            padding: 10px 20px;
-            font-size: 1rem;
-            border-radius: 8px;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            border-radius: 50px;
             cursor: pointer;
-            margin-top: 10px;
+            margin-top: 15px;
             font-family: inherit;
             font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transition: transform 0.1s;
         }
-        .btn-action:hover { background: #2c5282; }
+        .btn-action:active { transform: scale(0.95); }
+        .btn-action.secondary {
+            background: transparent;
+            border: 2px solid #4a5568;
+            padding: 8px 20px;
+            font-size: 0.9rem;
+            color: #cbd5e0;
+            margin-top: 10px;
+            background-color: rgba(0,0,0,0.3); /* better visibility */
+        }
 
         /* Laser Button */
         #laser-btn {
@@ -95,7 +125,7 @@
             cursor: pointer;
             box-shadow: 0 0 15px #c53030;
             transition: transform 0.1s, opacity 0.3s;
-            opacity: 0; /* Hidden by default */
+            opacity: 0; 
             transform: scale(0);
             margin-bottom: 20px;
             user-select: none;
@@ -112,19 +142,11 @@
             animation: pulse 1s infinite;
         }
 
-        #laser-btn:active { transform: scale(0.95); }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
         /* Modal / Instructions */
         #modal {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85);
+            background: rgba(0,0,0,0.9);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -138,14 +160,35 @@
             padding: 30px;
             border-radius: 15px;
             text-align: center;
-            max-width: 400px;
-            width: 80%;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
         }
 
-        .modal-content h2 { margin-top: 0; color: #2b6cb0; }
+        .modal-content h2 { margin-top: 0; color: #2b6cb0; font-size: 1.5rem; }
+        .modal-content p { color: #4a5568; margin-bottom: 15px; }
         
+        .info-list { text-align: right; background: #f7fafc; padding: 15px; border-radius: 8px; margin: 10px 0; }
+        .info-list h3 { font-size: 1rem; color: #2d3748; margin: 0 0 5px 0; }
+        .info-list ul { padding-right: 20px; margin: 0; color: #4a5568; }
+
         .hidden { display: none !important; }
+
+        /* Bottom navigation bar - Moved Back button to right */
+        .bottom-nav {
+            position: absolute;
+            bottom: 20px;
+            right: 20px; /* Aligned to right */
+            left: auto;
+            width: auto;
+            display: flex;
+            pointer-events: none;
+        }
+        .bottom-nav button {
+            pointer-events: auto;
+        }
 
         /* Labels for Anatomy */
         .anatomy-label {
@@ -167,26 +210,53 @@
     <div id="labels-container"></div>
 
     <div class="ui-layer">
-        <div class="header" id="game-instruction-box">
-            <h1 id="stage-title">שלב 1: הדגמה</h1>
-            <p id="stage-desc">הרופא מחדיר את הצינורית. הצינורית גמישה ולכן אין חשש מפגיעה בדפנות.</p>
-            <button id="next-stage-btn" class="btn-action hidden" onclick="nextStage()">התחל את הפעולה</button>
+        <!-- Main Info Box -->
+        <div class="header hidden" id="game-instruction-box">
+            <h1 id="stage-title">כותרת</h1>
+            <div id="stage-content">תוכן</div>
+            <button id="next-stage-btn" class="btn-action hidden" onclick="nextStage()">המשך</button>
         </div>
+
+        <!-- Laser Button -->
         <div id="laser-btn">לייזר</div>
+
+        <!-- Back Button -->
+        <div class="bottom-nav">
+            <button id="back-btn" class="btn-action secondary hidden" onclick="goBack()">חזור</button>
+        </div>
     </div>
 
-    <!-- Intro/Success Modal -->
+    <!-- Modals -->
     <div id="modal">
         <div class="modal-content" id="start-screen">
-            <h2>ברוכים הבאים</h2>
-            <p>סימולטור זה ידגים לכם את הליך ריסוק האבנים.</p>
-            <p>ההליך בטוח, מדויק ומתבצע ללא חתכים.</p>
-            <button class="btn-action" onclick="startGame()">התחל הדגמה</button>
+            <h2>ברוכים הבאים לסימולציה</h2>
+            <p>בסימולציה הזו נלמד בצורה רגועה וברורה מה קורה במהלך ניתוח אורטרוסקופיה – הליך קצר שנועד לאתר או להסיר אבנים מדרכי השתן.</p>
+            <span class="subtext">הסימולציה אורכת כ-5 דקות • בכל שלב תוכלו לעצור ולחזור</span>
+            <button class="btn-action" onclick="startGameFlow()">בואו נתחיל</button>
         </div>
         
         <div class="modal-content hidden" id="success-screen">
-            <h2 style="color: #38a169;">הטיפול הסתיים בהצלחה!</h2>
-            <p>האבן רוסקה לחלוטין לאבק דק שייצא באופן טבעי.</p>
+            <h2 style="color: #38a169;">הניתוח עבר בהצלחה!</h2>
+            
+            <div class="info-list">
+                <h3>אחרי הניתוח – מה מרגישים?</h3>
+                <ul>
+                    <li>מיד לאחר ההליך תישארו למעקב קצר. לרוב חוזרים הביתה באותו יום.</li>
+                    <li>ביום-יומיים הראשונים ייתכן צריבה קלה או צורך דחוף להשתין. זה טבעי וחולף.</li>
+                    <li>חשוב לפעול לפי הוראות הרופא וליטול תרופות במידת הצורך.</li>
+                </ul>
+            </div>
+
+            <div class="info-list" style="background: #e6fffa;">
+                <h3>תופעות נפוצות (טבעיות):</h3>
+                <ul>
+                    <li>צריבה קלה בשתן</li>
+                    <li>צורך תכוף להשתין</li>
+                    <li>דם קל בשתן (ביומיים הראשונים)</li>
+                    <li>תחושת אי נוחות קלה</li>
+                </ul>
+                <p style="margin-top:5px; font-weight:bold; color: #2c7a7b;">✓ כל התופעות הללו חולפות תוך מספר ימים</p>
+            </div>
             <button class="btn-action" onclick="resetGame()">התחל מחדש</button>
         </div>
     </div>
@@ -201,24 +271,35 @@
     const startScreen = document.getElementById('start-screen');
     const successScreen = document.getElementById('success-screen');
     const labelsContainer = document.getElementById('labels-container');
+    const instructionBox = document.getElementById('game-instruction-box');
     const stageTitle = document.getElementById('stage-title');
-    const stageDesc = document.getElementById('stage-desc');
+    const stageContent = document.getElementById('stage-content');
     const nextStageBtn = document.getElementById('next-stage-btn');
+    const backBtn = document.getElementById('back-btn');
 
-    // Game States: 'idle', 'demo', 'navigate', 'destroy', 'win'
-    let currentState = 'idle';
-    let isLaserActive = false;
+    const STAGES = [
+        'intro', 
+        'demo_handle', 'demo_tract', 
+        'laser_explainer', 
+        'navigate_handle', 'navigate_tract', 
+        'destroy', 
+        'post_op'
+    ];
+    let currentStageIndex = 0;
     
-    // Canvas dimensions
+    let isLaserActive = false;
+    let autoLaserTimer = 0;
+    
     let width, height;
     
     // Entities
-    let anatomicalPath = []; 
+    let fullPath = []; 
+    let organStartIndex = 0;
     let scopeChain = []; 
-    let stone = null;
+    let stones = []; 
     let particles = [];
     
-    // Camera / Zoom
+    // Camera
     let cameraZoom = 1;
     let cameraOffset = { x: 0, y: 0 };
     let targetZoom = 1;
@@ -227,89 +308,165 @@
     // Interaction
     const mouse = { x: 0, y: 0, isDown: false };
     let scopeProgressIndex = 0; 
-    let demoProgress = 0; // For auto-play
-
+    
     // Constants
     const KIDNEY_COLOR = '#FEB2B2';
     const KIDNEY_STROKE = '#E53E3E';
     const TRACT_COLOR = '#FED7D7';
     const TRACT_STROKE = '#F56565';
     const STONE_COLOR = '#D69E2E';
-    
-    // --- State Management ---
+    const TRACT_RADIUS = 14; // Approximate radius for wall collision (half of lineWidth 30)
 
-    function setStage(stage) {
-        currentState = stage;
+    let levelCompleteTime = null; // New variable to track win animation time
+
+    function startGameFlow() {
+        modal.classList.add('hidden');
+        startScreen.classList.add('hidden');
+        successScreen.classList.add('hidden');
+        
+        handleResize(); // Generates path
+        // Force stone init after path is ready
+        initStones();
+        
+        goToStage(1); 
+        requestAnimationFrame(loop);
+    }
+
+    function goToStage(index) {
+        if (index < 0) index = 0;
+        if (index >= STAGES.length) index = STAGES.length - 1;
+        
+        currentStageIndex = index;
+        const stage = STAGES[index];
+
+        // UI Reset
+        instructionBox.classList.remove('hidden');
+        instructionBox.classList.remove('top-left'); 
         nextStageBtn.classList.add('hidden');
         laserBtn.classList.remove('visible');
+        backBtn.classList.remove('hidden');
+        
+        // View Reset
+        targetZoom = 1;
+        targetOffset = {x: 0, y:0};
+        autoLaserTimer = 0;
+        isLaserActive = false;
+        levelCompleteTime = null; // Reset win timer
 
-        if (stage === 'demo') {
-            stageTitle.innerText = "שלב 1: הדגמת המסלול";
-            stageDesc.innerText = "צפו כיצד הצינורית הגמישה עוברת בבטחה במרכז דרכי השתן, הצינורית גמישה ולכן אין חשש מפגיעה בדפנות.";
-            scopeProgressIndex = 0;
-            demoProgress = 0;
-            targetZoom = 1;
-            targetOffset = {x: 0, y:0};
+        // Stage Logic
+        if (stage === 'intro') {
+            modal.classList.remove('hidden');
+            startScreen.classList.remove('hidden');
+            backBtn.classList.add('hidden');
+            instructionBox.classList.add('hidden');
         }
-        else if (stage === 'navigate') {
-            stageTitle.innerText = "שלב 2: תורכם";
-            stageDesc.innerText = "גררו את הצינורית במעלה המסלול עד שתגיעו לאבן בכליה.";
-            scopeProgressIndex = 0; // Reset position for user
-            targetZoom = 1;
-            targetOffset = {x: 0, y:0};
-            // Reset scope to start
-            initScope();
+        else if (stage === 'demo_handle') {
+            instructionBox.classList.add('top-left');
+            stageTitle.innerText = "שלב 1: החדרת המכשיר";
+            stageContent.innerHTML = `
+                <p>הבדיקה מתחילה בהחדרת צינורית דקה וגמישה דרך פתח השופכה.</p>
+                <div style="margin-top:10px; font-weight:bold; color: #90cdf4;">✓ ללא חתכים בגוף</div>
+            `;
+            scopeProgressIndex = 0;
+            initScopeAt(0);
+            nextStageBtn.classList.add('hidden');
+        }
+        else if (stage === 'demo_tract') {
+            instructionBox.classList.add('top-left');
+            stageTitle.innerText = "שלב 2: תנועה בדרכי השתן";
+            stageContent.innerHTML = `
+                <p>הצינורית מתקדמת בעדינות במעלה השופכן עד להגעה לכליה.</p>
+            `;
+            targetZoom = 1.3;
+            targetOffset = {
+                x: (width/2) * (1 - targetZoom), 
+                y: (height * 0.4) * (1 - targetZoom) 
+            };
+            scopeProgressIndex = organStartIndex;
+            initScopeAt(organStartIndex);
+            nextStageBtn.classList.add('hidden'); 
+        }
+        else if (stage === 'laser_explainer') {
+            stageTitle.innerText = "ריסוק האבן";
+            stageContent.innerHTML = `
+                <p>כאשר הרופא מזהה את האבן הוא משתמש בקרן לייזר מדויקת כדי לפרק אותה.</p>
+            `;
+            targetZoom = 2.0;
+            if (fullPath.length > 0) {
+                const endP = fullPath[fullPath.length-1];
+                targetOffset = {
+                    x: (width / 2) - (endP.x * 2.0),
+                    y: (height / 2) - (endP.y * 2.0)
+                };
+            }
+            nextStageBtn.classList.remove('hidden');
+        }
+        else if (stage === 'navigate_handle') {
+            instructionBox.classList.add('top-left');
+            stageTitle.innerText = "תורכם: החדרת הצינורית";
+            stageContent.innerHTML = "גררו את הצינורית <b>מהידית</b> אל תוך פתח השופכה.";
+            scopeProgressIndex = 0;
+            initScopeAt(0);
+        }
+        else if (stage === 'navigate_tract') {
+            instructionBox.classList.add('top-left');
+            stageTitle.innerText = "תורכם: ניווט לכליה";
+            stageContent.innerHTML = "המשיכו לגרור את הצינורית בחופשיות. שימו לב שהיא מוגבלת על ידי הדפנות.";
+            
+            targetZoom = 1.3;
+            targetOffset = {
+                x: (width/2) * (1 - targetZoom), 
+                y: (height * 0.4) * (1 - targetZoom) 
+            };
+            scopeProgressIndex = organStartIndex;
+            initScopeAt(organStartIndex);
         }
         else if (stage === 'destroy') {
-            stageTitle.innerText = "שלב 3: ריסוק האבן";
-            stageDesc.innerText = "הגענו ליעד! לחצו על כפתור הלייזר כדי לפורר את האבן.";
+            stageTitle.innerText = "המשחק: ריסוק האבנים";
+            stageContent.innerHTML = "לחצו על כפתור הלייזר כדי לפורר את האבנים הגדולות.";
             laserBtn.classList.add('visible');
             
-            // Zoom in to stone
             targetZoom = 2.5;
-            // Calculate center based on stone position
-            const stoneX = stone.x;
-            const stoneY = stone.y;
-            // We want stone at center of screen (width/2, height/2)
-            // Offset = Center - (Stone * Zoom)
-            targetOffset = {
-                x: (width / 2) - (stoneX * 2.5),
-                y: (height / 2) - (stoneY * 2.5)
-            };
+            if (fullPath.length > 0) {
+                // Ensure stone exists for targeting
+                if(stones.length === 0) initStones();
+                
+                const target = stones[0] || fullPath[fullPath.length-1];
+                targetOffset = {
+                    x: (width / 2) - (target.x * 2.5),
+                    y: (height / 2) - (target.y * 2.5)
+                };
+            }
+        }
+        else if (stage === 'post_op') {
+            modal.classList.remove('hidden');
+            successScreen.classList.remove('hidden');
+            instructionBox.classList.add('hidden');
+            backBtn.classList.add('hidden');
         }
     }
 
-    function nextStage() {
-        if (currentState === 'demo') {
-            setStage('navigate');
-        }
-    }
+    function nextStage() { goToStage(currentStageIndex + 1); }
+    function goBack() { goToStage(currentStageIndex - 1); }
 
-    // --- Anatomy Generation ---
-    
-    function generateAnatomyPath(w, h) {
+    function generateFullPaths(w, h) {
+        if (!w || !h) return [];
         const points = [];
-        // Urethra
-        addLinePoints(points, w * 0.5, h * 1.1, w * 0.5, h * 0.75, 20);
-        // Bladder
-        addQuadCurvePoints(points, 
-            w * 0.5, h * 0.75, 
-            w * 0.5, h * 0.65, 
-            w * 0.55, h * 0.60, 
-            20
-        );
-        // Ureter (Curve adjusted for connecting to kidney bottom)
-        addBezierCurvePoints(points,
-            w * 0.55, h * 0.60, 
-            w * 0.70, h * 0.50, 
-            w * 0.70, h * 0.40, 
-            w * 0.70, h * 0.20, 
-            50
-        );
+        const handleX = w * 0.15 + 10;
+        const handleY = h * 0.85 - 30;
+        const entryX = w * 0.5;
+        const entryY = h * 0.95;
+
+        addBezierCurvePoints(points, handleX, handleY, handleX + 50, handleY - 100, entryX - 50, entryY + 50, entryX, entryY, 25);
+        organStartIndex = points.length - 1;
+
+        addLinePoints(points, w * 0.5, h * 0.95, w * 0.5, h * 0.75, 20); 
+        addQuadCurvePoints(points, w * 0.5, h * 0.75, w * 0.5, h * 0.65, w * 0.55, h * 0.60, 20); 
+        addBezierCurvePoints(points, w * 0.55, h * 0.60, w * 0.65, h * 0.55, w * 0.70, h * 0.40, w * 0.70, h * 0.20, 50); 
+        
         return points;
     }
 
-    // Geometry Helpers
     function addLinePoints(arr, x1, y1, x2, y2, steps) {
         for (let i = 0; i <= steps; i++) {
             const t = i / steps;
@@ -337,17 +494,15 @@
     }
 
     // --- Drawing ---
-
     function drawOrgans() {
+        if (fullPath.length === 0) return;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
 
-        // Kidney
-        const kX = anatomicalPath[anatomicalPath.length - 1].x;
-        const kY = anatomicalPath[anatomicalPath.length - 1].y;
+        const endP = fullPath[fullPath.length - 1];
         
         ctx.save();
-        ctx.translate(kX, kY);
+        ctx.translate(endP.x, endP.y);
         ctx.rotate(-Math.PI / 2); 
         ctx.beginPath();
         ctx.moveTo(0, -50);
@@ -360,58 +515,62 @@
         ctx.stroke();
         ctx.restore();
 
-        // Bladder
-        const bStart = anatomicalPath.find((p, i) => i > 20);
-        if(bStart) {
-            ctx.save();
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(width * 0.5, height * 0.70, width * 0.15, height * 0.12, 0, 0, Math.PI * 2);
+        ctx.fillStyle = KIDNEY_COLOR;
+        ctx.strokeStyle = KIDNEY_STROKE;
+        ctx.lineWidth = 8;
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+
+        if (fullPath[organStartIndex]) {
             ctx.beginPath();
-            ctx.ellipse(width * 0.5, height * 0.70, width * 0.15, height * 0.12, 0, 0, Math.PI * 2);
-            ctx.fillStyle = KIDNEY_COLOR;
-            ctx.strokeStyle = KIDNEY_STROKE;
-            ctx.lineWidth = 8;
-            ctx.fill();
+            const startP = fullPath[organStartIndex];
+            ctx.moveTo(startP.x, startP.y);
+            for(let i=organStartIndex + 1; i<fullPath.length; i++) {
+                ctx.lineTo(fullPath[i].x, fullPath[i].y);
+            }
+            ctx.strokeStyle = TRACT_STROKE;
+            ctx.lineWidth = 40;
             ctx.stroke();
-            ctx.restore();
-        }
 
-        // Tract
-        ctx.beginPath();
-        ctx.moveTo(anatomicalPath[0].x, anatomicalPath[0].y);
-        for(let i=1; i<anatomicalPath.length; i++) {
-            ctx.lineTo(anatomicalPath[i].x, anatomicalPath[i].y);
+            ctx.beginPath();
+            ctx.moveTo(startP.x, startP.y);
+            for(let i=organStartIndex + 1; i<fullPath.length; i++) {
+                ctx.lineTo(fullPath[i].x, fullPath[i].y);
+            }
+            ctx.strokeStyle = TRACT_COLOR;
+            ctx.lineWidth = 30;
+            ctx.stroke();
         }
-        ctx.strokeStyle = TRACT_STROKE;
-        ctx.lineWidth = 40;
-        ctx.stroke();
+    }
 
-        ctx.beginPath();
-        ctx.moveTo(anatomicalPath[0].x, anatomicalPath[0].y);
-        for(let i=1; i<anatomicalPath.length; i++) {
-            ctx.lineTo(anatomicalPath[i].x, anatomicalPath[i].y);
-        }
-        ctx.strokeStyle = TRACT_COLOR;
-        ctx.lineWidth = 30;
-        ctx.stroke();
-        
-        ctx.beginPath();
-        ctx.moveTo(anatomicalPath[0].x, anatomicalPath[0].y);
-        for(let i=1; i<anatomicalPath.length; i+=2) {
-            ctx.lineTo(anatomicalPath[i].x, anatomicalPath[i].y);
-        }
-        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-        ctx.lineWidth = 20;
-        ctx.stroke();
+    function drawUreteroscopeHandle() {
+        const handleX = width * 0.15;
+        const handleY = height * 0.85; 
+        ctx.save();
+        ctx.translate(handleX, handleY);
+        ctx.rotate(-0.3); 
+        ctx.fillStyle = '#2d3748';
+        ctx.beginPath(); ctx.roundRect(-20, -40, 40, 100, 10); ctx.fill();
+        ctx.strokeStyle = '#4a5568'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(-15, -20); ctx.lineTo(15, -20); ctx.moveTo(-15, 0); ctx.lineTo(15, 0); ctx.moveTo(-15, 20); ctx.lineTo(15, 20); ctx.stroke();
+        ctx.fillStyle = '#4a5568'; ctx.beginPath(); ctx.arc(0, -40, 30, Math.PI, 0); ctx.fill();
+        ctx.fillStyle = '#718096'; ctx.beginPath(); ctx.arc(0, -55, 10, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
     }
 
     function updateLabels() {
         labelsContainer.innerHTML = '';
-        if (currentState === 'destroy') return; // Hide labels in zoom mode
+        const stage = STAGES[currentStageIndex];
+        if (stage !== 'demo_tract' && stage !== 'navigate_tract' && stage !== 'demo_handle') return; 
+        if (fullPath.length === 0) return;
 
         const labels = [
-            { text: "כליה", x: anatomicalPath[anatomicalPath.length-1].x - 60, y: anatomicalPath[anatomicalPath.length-1].y },
-            { text: "שופכן", x: width * 0.25, y: height * 0.45 },
+            { text: "כליה", x: fullPath[fullPath.length-1].x - 60, y: fullPath[fullPath.length-1].y },
             { text: "שלפוחית", x: width * 0.65, y: height * 0.75 },
-            { text: "שופכה", x: width * 0.55, y: height * 0.90 }
         ];
 
         labels.forEach(l => {
@@ -424,15 +583,9 @@
         });
     }
 
-    // --- Entities ---
-
     class Stone {
-        constructor() {
-            const loc = anatomicalPath[anatomicalPath.length - 5]; 
-            this.x = loc.x;
-            this.y = loc.y;
-            this.radius = 15;
-            this.health = 100;
+        constructor(x, y, radius, level = 0) {
+            this.x = x; this.y = y; this.radius = radius; this.level = level; this.health = 100;
             this.vertices = [];
             const sides = 8;
             for (let i = 0; i < sides; i++) {
@@ -441,143 +594,160 @@
                 this.vertices.push({ x: Math.cos(angle) * r, y: Math.sin(angle) * r });
             }
         }
-
         draw() {
-            if (this.health <= 0) return;
-
             ctx.save();
             ctx.translate(this.x, this.y);
-            if (isLaserActive) ctx.translate(Math.random()*2 - 1, Math.random()*2 - 1);
-
+            if (isLaserActive && (STAGES[currentStageIndex] === 'destroy' || STAGES[currentStageIndex] === 'laser_explainer')) {
+                ctx.translate(Math.random()*2 - 1, Math.random()*2 - 1);
+            }
             ctx.beginPath();
             ctx.moveTo(this.vertices[0].x, this.vertices[0].y);
             for (let i = 1; i < this.vertices.length; i++) {
                 ctx.lineTo(this.vertices[i].x, this.vertices[i].y);
             }
             ctx.closePath();
-            
             ctx.fillStyle = STONE_COLOR;
             ctx.fill();
             ctx.strokeStyle = '#744210';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 1.5;
             ctx.stroke();
-
-            // Damage cracks
             if (this.health < 70) {
-                ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(this.vertices[0].x, this.vertices[0].y); ctx.stroke();
-            }
-            if (this.health < 40) {
-                ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(this.vertices[3].x, this.vertices[3].y); ctx.stroke();
+                 ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(this.vertices[0].x, this.vertices[0].y); ctx.stroke();
             }
             ctx.restore();
         }
-
         hit() {
-            this.health -= 1.5;
+            this.health -= 2;
             createParticles(this.x, this.y, STONE_COLOR);
-            if (this.health <= 0) endGame();
+            return (this.health <= 0);
         }
+    }
+
+    // Force initialization of stones based on current fullPath
+    function initStones() {
+        if (fullPath.length === 0) return;
+        const loc = fullPath[fullPath.length - 5]; 
+        stones = [new Stone(loc.x, loc.y, 20, 0)];
     }
 
     class Particle {
         constructor(x, y, color) {
-            this.x = x;
-            this.y = y;
-            this.vx = (Math.random() - 0.5) * 8;
-            this.vy = (Math.random() - 0.5) * 8;
-            this.life = 1.0;
-            this.color = color;
-            this.size = Math.random() * 4 + 1;
+            this.x = x; this.y = y;
+            this.vx = (Math.random() - 0.5) * 8; this.vy = (Math.random() - 0.5) * 8;
+            this.life = 1.0; this.color = color; this.size = Math.random() * 3 + 1;
         }
-        update() {
-            this.x += this.vx;
-            this.y += this.vy;
-            this.life -= 0.05;
-        }
+        update() { this.x += this.vx; this.y += this.vy; this.life -= 0.05; }
         draw() {
-            ctx.globalAlpha = this.life;
-            ctx.fillStyle = this.color;
-            ctx.fillRect(this.x, this.y, this.size, this.size);
-            ctx.globalAlpha = 1.0;
+            ctx.globalAlpha = this.life; ctx.fillStyle = this.color;
+            ctx.fillRect(this.x, this.y, this.size, this.size); ctx.globalAlpha = 1.0;
         }
     }
-
     function createParticles(x, y, color) {
         for(let i=0; i<3; i++) particles.push(new Particle(x, y, color));
     }
 
-    // --- Scope Logic ---
-
-    function initScope() {
+    function initScopeAt(startIndex) {
+        if (fullPath.length === 0) return;
         scopeChain = [];
-        const startX = anatomicalPath[0].x;
-        const startY = height + 100; 
-        const segments = 100; // Increased from 40 to 100 for a much longer cable
-        
+        if (startIndex < 0 || startIndex >= fullPath.length) startIndex = 0;
+        const startP = fullPath[startIndex];
+        // Ensure enough length to look like a continuous cable
+        const segments = 200; 
         for(let i=0; i<segments; i++) {
-            scopeChain.push({ x: startX, y: startY + (i * 8) });
+            scopeChain.push({ x: startP.x, y: startP.y });
         }
-        scopeProgressIndex = 0;
     }
 
+    function initScope() { initScopeAt(0); }
+
     function updateScope() {
-        // Logic branches based on stage
-        
-        if (currentState === 'demo') {
-            // Auto-move
-            if (scopeProgressIndex < anatomicalPath.length - 6) {
-                scopeProgressIndex += 0.2; // Reduced speed from 0.5 to 0.2
+        if (fullPath.length === 0 || scopeChain.length === 0) return;
+        const stage = STAGES[currentStageIndex];
+
+        // --- Demo Stages (Auto Movement) ---
+        if (stage === 'demo_handle') {
+            if (scopeProgressIndex < organStartIndex) {
+                scopeProgressIndex += 0.2;
+                // Update Head using Path Index
+                const idx = Math.floor(scopeProgressIndex);
+                if(fullPath[idx]) {
+                    scopeChain[0].x = fullPath[idx].x;
+                    scopeChain[0].y = fullPath[idx].y;
+                }
             } else {
-                // Demo done, show next button
-                if(nextStageBtn.classList.contains('hidden')) {
-                    nextStageBtn.classList.remove('hidden');
-                    stageDesc.innerText = "ההדגמה הסתיימה. כעת תורכם לנסות.";
-                }
+                nextStageBtn.classList.remove('hidden');
             }
         }
-        else if (currentState === 'navigate') {
-            // User control
+        else if (stage === 'demo_tract') {
+            if (scopeProgressIndex < fullPath.length - 10) {
+                scopeProgressIndex += 0.2;
+                const idx = Math.floor(scopeProgressIndex);
+                if(fullPath[idx]) {
+                    scopeChain[0].x = fullPath[idx].x;
+                    scopeChain[0].y = fullPath[idx].y;
+                }
+            } else {
+                nextStageBtn.classList.remove('hidden');
+            }
+        }
+        else if (stage === 'laser_explainer') {
+            // Auto laser demo
+            const targetIdx = fullPath.length - 8;
+            if (Math.abs(scopeProgressIndex - targetIdx) > 5) {
+                scopeProgressIndex = targetIdx;
+            }
+             const idx = Math.floor(scopeProgressIndex);
+            if(fullPath[idx]) {
+                scopeChain[0].x = fullPath[idx].x;
+                scopeChain[0].y = fullPath[idx].y;
+            }
+
+            autoLaserTimer++;
+            if (autoLaserTimer % 120 < 60) {
+                isLaserActive = true;
+                if (stones.length > 0) createParticles(stones[0].x, stones[0].y, STONE_COLOR);
+            } else { isLaserActive = false; }
+        }
+        // --- Navigation Stages (Mouse Control) ---
+        else if (stage === 'navigate_handle') {
+            // Constrained to path (User is learning)
             if (mouse.isDown) {
-                let closestDist = Infinity;
-                let closestIdx = -1;
-                // Search around current position
-                let startSearch = Math.max(0, scopeProgressIndex - 20);
-                let endSearch = Math.min(anatomicalPath.length - 1, scopeProgressIndex + 20);
-                if (scopeProgressIndex < 5) { startSearch = 0; endSearch = 20; }
-
-                // Map mouse to canvas space considering zoom (though zoom is 1 here)
-                // In navigate mode zoom is 1, so mouse.x is correct relative to canvas
-                
-                for(let i = 0; i < anatomicalPath.length; i++) {
-                    const p = anatomicalPath[i];
-                    const d = Math.hypot(mouse.x - p.x, mouse.y - p.y);
-                    if (d < closestDist) { closestDist = d; closestIdx = i; }
-                }
-                
-                if (closestDist < 150) {
-                     // Slowing down user control speed from 1 to 0.3
-                     if (closestIdx > scopeProgressIndex) scopeProgressIndex += 0.3;
-                     if (closestIdx < scopeProgressIndex) scopeProgressIndex -= 0.3;
+                handleDragInputPath(0, organStartIndex + 2);
+                const idx = Math.floor(scopeProgressIndex);
+                if(fullPath[idx]) {
+                    scopeChain[0].x = fullPath[idx].x;
+                    scopeChain[0].y = fullPath[idx].y;
                 }
             }
-
-            // Check if reached stone
-            if (scopeProgressIndex >= anatomicalPath.length - 8) {
-                setStage('destroy');
+            if (scopeProgressIndex >= organStartIndex) nextStage();
+        }
+        else if (stage === 'navigate_tract' || stage === 'destroy') {
+            // **Free Movement with Wall Collision**
+            if (mouse.isDown && stage === 'navigate_tract') {
+                updateHeadFreeMovement(organStartIndex, fullPath.length - 1);
+            }
+            
+            // Check win condition for navigation
+            if (stage === 'navigate_tract') {
+                // Find closest path index to current head position
+                const head = scopeChain[0];
+                let bestIdx = -1; 
+                let bestDist = Infinity;
+                // Only scan forward
+                for(let i=fullPath.length-20; i<fullPath.length; i++) {
+                    const p = fullPath[i];
+                    const d = Math.hypot(head.x - p.x, head.y - p.y);
+                    if(d < bestDist) { bestDist = d; bestIdx = i; }
+                }
+                // If close to end
+                if (bestDist < 40 && bestIdx > fullPath.length - 15) {
+                    nextStage();
+                }
             }
         }
-        else if (currentState === 'destroy') {
-            // Scope locked at position, waiting for laser
-            // Just minor bobbing
-        }
-
-        // --- Kinematics ---
-        const headTarget = anatomicalPath[Math.floor(scopeProgressIndex)] || anatomicalPath[anatomicalPath.length-1];
         
-        scopeChain[0].x = headTarget.x;
-        scopeChain[0].y = headTarget.y;
-
-        const segLength = 10;
+        // --- Kinematics (Tail follows Head) ---
+        const segLength = 5; // Tighter segments for smoother look
         for (let i = 1; i < scopeChain.length; i++) {
             const prev = scopeChain[i - 1];
             const curr = scopeChain[i];
@@ -592,7 +762,101 @@
         }
     }
 
+    // Helper: Classic path-constrained drag (for handle stage)
+    function handleDragInputPath(minIdx, maxIdx) {
+        let closestDist = Infinity;
+        let closestIdx = -1;
+        let searchWindow = 60; 
+        let startSearch = Math.max(minIdx, scopeProgressIndex - searchWindow);
+        let endSearch = Math.min(maxIdx, scopeProgressIndex + searchWindow);
+        
+        if (scopeProgressIndex < minIdx + 5) startSearch = minIdx;
+
+        for(let i = startSearch; i <= endSearch; i++) {
+            const p = fullPath[i];
+            if(!p) continue;
+            const d = Math.hypot(mouse.x - p.x, mouse.y - p.y);
+            if (d < closestDist) { closestDist = d; closestIdx = i; }
+        }
+        
+        if (closestDist < 300) {
+            // SLOWED DOWN: Reduced speed from 1.0 to 0.4 for smoother control
+            if (closestIdx > scopeProgressIndex) scopeProgressIndex += 0.4;
+            if (closestIdx < scopeProgressIndex) scopeProgressIndex -= 0.4;
+            if (scopeProgressIndex < minIdx) scopeProgressIndex = minIdx;
+            if (scopeProgressIndex > maxIdx) scopeProgressIndex = maxIdx;
+        }
+    }
+
+    // Helper: Free movement with wall constraints
+    function updateHeadFreeMovement(minPathIdx, maxPathIdx) {
+        const head = scopeChain[0];
+        
+        // 1. Find closest point on centerline to MOUSE
+        let closestP = null;
+        let minD = Infinity;
+        
+        // Step A: Where is the head currently along the path?
+        let currentPathIdx = -1;
+        let tempMin = Infinity;
+        for(let i=minPathIdx; i<=maxPathIdx; i++) {
+            const p = fullPath[i];
+            const d = Math.hypot(head.x - p.x, head.y - p.y);
+            if(d < tempMin) { tempMin = d; currentPathIdx = i; }
+        }
+
+        // Step B: Determine target based on mouse
+        // We allow the head to move towards mouse, but clamped to walls.
+        // Vector: Head -> Mouse
+        let dx = mouse.x - head.x;
+        let dy = mouse.y - head.y;
+        
+        // Limit speed to prevent tunneling through walls
+        // SLOWED DOWN: Reduced max speed from 4.0 to 2.0
+        const speed = 2.0;
+        const distToMouse = Math.hypot(dx, dy);
+        
+        if (distToMouse > speed) {
+            dx = (dx / distToMouse) * speed;
+            dy = (dy / distToMouse) * speed;
+        }
+        
+        let nextX = head.x + dx;
+        let nextY = head.y + dy;
+
+        // Step C: Wall Collision
+        // Find closest point on path to *next* position
+        let wallRefP = null;
+        let wallRefDist = Infinity;
+        let searchRange = 50; // Search local area of path
+        let startS = Math.max(minPathIdx, currentPathIdx - searchRange);
+        let endS = Math.min(maxPathIdx, currentPathIdx + searchRange);
+
+        for(let i=startS; i<=endS; i++) {
+            const p = fullPath[i];
+            const d = Math.hypot(nextX - p.x, nextY - p.y);
+            if (d < wallRefDist) { wallRefDist = d; wallRefP = p; }
+        }
+
+        // Apply Wall Constraint
+        // If distance to centerline > radius, project back to radius
+        if (wallRefDist > TRACT_RADIUS) {
+            const vX = nextX - wallRefP.x;
+            const vY = nextY - wallRefP.y;
+            const len = Math.hypot(vX, vY);
+            // Clamp
+            nextX = wallRefP.x + (vX / len) * TRACT_RADIUS;
+            nextY = wallRefP.y + (vY / len) * TRACT_RADIUS;
+        }
+
+        // Apply movement
+        scopeChain[0].x = nextX;
+        scopeChain[0].y = nextY;
+    }
+
     function drawScope() {
+        if (scopeChain.length === 0) return;
+
         ctx.beginPath();
         ctx.moveTo(scopeChain[0].x, scopeChain[0].y);
         for (let i = 1; i < scopeChain.length - 1; i++) {
@@ -615,11 +879,9 @@
         ctx.translate(tip.x, tip.y);
         ctx.rotate(angle);
         
-        // Camera head
         ctx.fillStyle = '#A0AEC0'; ctx.fillRect(-5, -6, 10, 12);
         ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(0, 0, 3, 0, Math.PI*2); ctx.fill();
 
-        // Light
         ctx.beginPath();
         ctx.moveTo(0, 0); ctx.lineTo(100, -30); ctx.lineTo(100, 30); ctx.closePath();
         const grad = ctx.createRadialGradient(0,0,10, 0,0,100);
@@ -632,7 +894,7 @@
             ctx.beginPath();
             ctx.moveTo(0, 0); ctx.lineTo(200, 0); 
             ctx.strokeStyle = '#F56565';
-            ctx.lineWidth = 4;
+            ctx.lineWidth = 3;
             ctx.shadowBlur = 10; ctx.shadowColor = 'red';
             ctx.stroke();
             ctx.shadowBlur = 0;
@@ -640,56 +902,76 @@
         ctx.restore();
     }
 
-    // --- Core Loop ---
-
     function loop() {
-        if (currentState === 'idle' || currentState === 'win') return;
-
+        const stage = STAGES[currentStageIndex];
         ctx.clearRect(0, 0, width, height);
 
-        // Zoom Interpolation
         cameraZoom += (targetZoom - cameraZoom) * 0.05;
         cameraOffset.x += (targetOffset.x - cameraOffset.x) * 0.05;
         cameraOffset.y += (targetOffset.y - cameraOffset.y) * 0.05;
 
         ctx.save();
-        // Apply camera transform
         ctx.translate(cameraOffset.x, cameraOffset.y);
         ctx.scale(cameraZoom, cameraZoom);
-
-        updateScope();
-        if (isLaserActive && stone && currentState === 'destroy') {
-            stone.hit();
-        }
         
-        particles.forEach((p, i) => {
-            p.update();
-            if(p.life <= 0) particles.splice(i, 1);
-        });
+        if (stage === 'demo_handle' || stage === 'navigate_handle') {
+            drawUreteroscopeHandle();
+        }
 
         drawOrgans();
-        if (stone) stone.draw();
+        stones.forEach(s => s.draw());
         drawScope();
         particles.forEach(p => p.draw());
 
-        ctx.restore(); // Undo camera for next frame
+        updateScope();
+
+        // Updated Logic for Destroy Stage
+        if (stage === 'destroy') {
+            // Destruction Logic
+            if (isLaserActive && scopeChain.length > 0 && stones.length > 0) {
+                for (let i = stones.length - 1; i >= 0; i--) {
+                    const s = stones[i];
+                    const tip = scopeChain[0];
+                    const d = Math.hypot(tip.x - s.x, tip.y - s.y);
+                    if (d < 80) { 
+                        const destroyed = s.hit();
+                        if (destroyed) {
+                            if (s.level === 0) {
+                                stones.push(new Stone(s.x - 10, s.y - 10, 12, 1));
+                                stones.push(new Stone(s.x + 10, s.y + 10, 12, 1));
+                            }
+                            stones.splice(i, 1);
+                        }
+                    }
+                }
+            }
+
+            // Win Condition with Animation Delay
+            if (stones.length === 0) {
+                if (!levelCompleteTime) {
+                    levelCompleteTime = Date.now();
+                }
+                // Wait 2 seconds (2000ms) for particles to fade before next stage
+                if (Date.now() - levelCompleteTime > 2000) {
+                    nextStage();
+                    levelCompleteTime = null;
+                }
+            }
+        }
+        ctx.restore();
 
         requestAnimationFrame(loop);
     }
-
-    // --- Input ---
 
     function handleResize() {
         width = window.innerWidth;
         height = window.innerHeight;
         canvas.width = width;
         canvas.height = height;
-        anatomicalPath = generateAnatomyPath(width, height);
+        fullPath = generateFullPaths(width, height);
         updateLabels();
-        
-        if (currentState === 'idle') {
-             drawOrgans();
-        }
+        initStones(); // Re-init stones on resize to keep correct pos
+        if (currentStageIndex === 0) drawOrgans(); 
     }
 
     function onMove(e) {
@@ -697,9 +979,6 @@
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         const rect = canvas.getBoundingClientRect();
-        
-        // We need to map screen coordinates to world coordinates if zoomed
-        // WorldX = (ScreenX - OffsetX) / Zoom
         mouse.x = (clientX - rect.left - cameraOffset.x) / cameraZoom;
         mouse.y = (clientY - rect.top - cameraOffset.y) / cameraZoom;
     }
@@ -716,46 +995,18 @@
     window.addEventListener('touchend', onUp);
 
     laserBtn.addEventListener('mousedown', (e) => {
-        if (currentState === 'destroy') isLaserActive = true;
+        if (STAGES[currentStageIndex] === 'destroy') isLaserActive = true;
         e.stopPropagation();
     });
     laserBtn.addEventListener('touchstart', (e) => {
         e.preventDefault();
-        if (currentState === 'destroy') isLaserActive = true;
+        if (STAGES[currentStageIndex] === 'destroy') isLaserActive = true;
         e.stopPropagation();
     });
     laserBtn.addEventListener('mouseup', () => isLaserActive = false);
     laserBtn.addEventListener('touchend', () => isLaserActive = false);
 
-    // --- Game Control ---
-
-    function startGame() {
-        handleResize();
-        modal.classList.add('hidden');
-        startScreen.classList.add('hidden');
-        successScreen.classList.add('hidden');
-        
-        initScope();
-        stone = new Stone();
-        particles = [];
-        
-        // Start Loop
-        setStage('demo');
-        requestAnimationFrame(loop);
-    }
-
-    function endGame() {
-        currentState = 'win';
-        laserBtn.classList.remove('active');
-        modal.classList.remove('hidden');
-        successScreen.classList.remove('hidden');
-    }
-    
-    function resetGame() {
-        startGame();
-    }
-
-    // Init
+    function resetGame() { goToStage(0); }
     handleResize();
 
 </script>
